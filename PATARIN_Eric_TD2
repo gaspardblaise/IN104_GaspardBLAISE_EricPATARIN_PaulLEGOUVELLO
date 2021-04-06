@@ -1,0 +1,42 @@
+class Animal:
+  def __init__(self,age,weight): 
+      self.age=age 
+      self.weight=weight
+      
+  def __privateMethod(self):
+      print(self.weight)
+      
+  def getWeight(self):
+      return self.__weight
+  def eat(self,kgm):
+      self.__weight+=kgm
+      print("L'animal pèse",self.__weight,"kg after eating.")
+  def getAge(self):
+      print(self.age)
+      
+
+class Oiseau(Animal):
+    def attribut_oiseau(self,vertebre,taille_bec):
+        self.vertebre=vertebre
+        self.taille_bec=taille_bec
+        
+    def __str__(self):
+        return "Je suis un oiseau of "+str(self.getWeight())+"kg"
+        
+    def voler(self):
+        print("Je m'envole pioupioupiou'")
+    
+    def taille(self):
+        return("Le bec de cet oiseau a une taille de"+str(self.taille_bec)+"cm")
+        
+        
+class Insecte_volant(Animal):
+    def attribut_insecte(self,nb_ailes,duree_de_vie):
+        self.nb_ailes=nb_ailes
+        self.duree_de_vie=duree_de_vie
+        
+    def rapport_poids_aile(self):
+        return(str((self.nb_ailes)/(self.weight)))
+        
+    def bruit(self):
+        print("bzzzz")
