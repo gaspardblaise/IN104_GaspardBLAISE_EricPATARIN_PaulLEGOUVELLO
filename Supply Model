@@ -146,7 +146,7 @@ for i in F :
     
     
 ##Retrieving
-model = {'regression': Linear_Regression, 'classification': Logistic_Regression}
+model = {'regression': Linear_Regression, 'classification': Random_Forest}
 import pickle
 filename = 'finalized_model.sav'
 pickle.dump(model, open(filename, 'wb'))
