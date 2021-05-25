@@ -50,86 +50,103 @@ price = pd.read_csv("price_data.csv",sep=";")
 price = price >> mutate(Date = pd.to_datetime(price['Date'],format="%d/%m/%Y"))
 price = price.rename(columns = {'Date':'gasDayStartedOn'})
 
+##
+#Logistic Regression
 
-##Logistic Regression
+F = {'SF - UGS Rehden','SF - UGS Kraak','SF - UGS Epe Uniper H-Gas','SF - UGS Bierwang'}
 
 
+Logistic_Regression={"SF - UGS Rehden": {} ,"SF - UGS Kraak": {}, "SF - UGS Epe Uniper H-Gas" : {}, "SF - UGS Bierwang" : {}}
 
-for i in sheet_name :
+Random_Forest=Logistic_Regression
 
+def LR(X,Y):
+    x_train, x_test, y_train, y_test = train_test_split(X,Y, random_state = 1)
+    lr = LogisticRegression()
+    lr.fit(x_train, y_train)
+    #print(lr.coef_)
+    #print(lr.intercept_)
+    
+    y_pred = lr.predict(x_test)
+    cm=metrics.confusion_matrix(y_test, y_pred)
+    probs=lr.predict_proba(x_test)[:,1]
+
+    return {'recall': metrics.recall_score(y_test, y_pred), 'neg_recall': cm[1,1]/(cm[0,1] + cm[1,1]), 'confusion': cm, 'precision': metrics.precision_score(y_test, y_pred), 'neg_precision':cm[1,1]/cm.sum(axis=1)[1], 'roc': metrics.roc_auc_score(y_test, probs),'Nom': 'LR'}
+
+
+def RF(X,Y):
+    x_train,x_test,y_train,y_test = train_test_split(X,Y,random_state=1)
+    
+    clf = RandomForestClassifier(100)
+    clf.fit(x_train,y_train)
+    y_pred=clf.predict(x_test)
+    
+    cm = metrics.confusion_matrix(y_test,y_pred)
+    
+    probs=clf.predict_proba(x_test)[:,1]
+    print('Accuracy: ',metrics.accuracy_score(y_test, y_pred))
+    
+    return {'recall': metrics.recall_score(y_test, y_pred), 'neg_recall': cm[1,1]/(cm[0,1] + cm[1,1]), 'confusion': cm, 'precision': metrics.precision_score(y_test, y_pred), "neg_precision":cm[1,1]/cm.sum(axis=1)[1], 'roc': metrics.roc_auc_score(y_test, probs),'Nom': 'RM'}
+
+
+for i in F:
+    
     data[i]=pd.merge(data[i],price,on='gasDayStartedOn')
     X=data[i].loc[:,'Lagged_NW':'SAS_NBP']
     Y=data[i].loc[:,'Net Withdrawal_binary']
-print(Y.head())
-print(X.head())
-
-#Classification
-x_train, x_test, y_train, y_test = train_test_split(X,Y, random_state=1)
-lr = LogisticRegression()
-lr.fit(x_train, y_train)
-print(lr.coef_)
-print(lr.intercept_)
-
-y_pred = lr.predict(x_test)
-#cm=confusion_matrix(y_test, y_pred)
-
-
-probs=lr.predict_proba(x_test)[:,1]
-
-
-Logistic_Regression = {'recall': metrics.recall_score(y_test, y_pred), 'neg_recall': cm[1,1]/(cm[0,1] + cm[1,1]), 'confusion': cm, 'precision': metrics.precision_score(y_test, y_pred), 'neg_precision':cm[1,1]/cm.sum(axis=1)[1], 'roc': metrics.roc_auc_score(y_test, probs),'class_mod': lr.coef_}
-
-
-
-
-##Random Forest
-# Create the model with 100 trees
-
-x_train,x_test,y_train,y_test = train_test_split(X,Y,random_state=1)
-clf = RandomForestClassifier(100)
-clf.fit(x_train,y_train)
-y_pred=clf.predict(x_test)
-
-#cm = confusion_matrix(y_test,y_pred)
-
-probs=clf.predict_proba(x_test)[:,1]
-print('Accuracy: ',metrics.accuracy_score(y_test, y_pred))
-
-Random_Forest = {'recall': metrics.recall_score(y_test, y_pred), 'neg_recall': cm[1,1]/(cm[0,1] + cm[1,1]), 'confusion': confusion_matrix, 'precision': metrics.precision_score(y_test, y_pred), 'neg_precision':cm[1,1]/cm.sum(axis=1)[1], 'roc': metrics.roc_auc_score(y_test, probs),'class_mod': lr.coef_}
-
+    Random_Forest[i]=RF(X,Y)
+    Logistic_Regression[i]=LR(X,Y)
 
 ##Choix de la meilleure methode
 
-print('precision LR:',Logistic_Regression['precision'])
-print('precision RF:',Random_Forest['precision'])
+def Comparaison(d1,d2,F):
+    c1=0
+    c2=0
+    k='neg_precision'
+    
+    for i in F:
+        
+        if d1[i][k]>d2[i][k]:
+            c1=c1+1
+        else:
+            c2=c2+1
+    if c1>c2:
+        print('logistic regression')
+    else:
+        print ('random forest')
+
+
 
 #%%Linear Regression
-for i in sheet_name :
+Linear_Regression={"SF - UGS Rehden": {} ,"SF - UGS Kraak": {}, "SF - UGS Epe Uniper H-Gas" : {}, "SF - UGS Bierwang" : {}}
+
+
+def LiR(X,Y):
+    x_train, x_test, y_train, y_test = train_test_split(X,Y, random_state=1)
+    lr = LinearRegression()
+    lr.fit(x_train, y_train)
+    print(lr.coef_)
+    print(lr.intercept_)
+    y_pred = lr.predict(x_test)
+    rmse=sqrt(mean_squared_error(y_test,y_pred))
+    nrmse=rmse/(max(y_test)-min(y_test))
+    anrmse=rmse/np.average(y_test)
+    corr=pearsonr(y_test,y_pred)
+
+
+    return {'r2': metrics.r2_score(y_test, y_pred), 'rmse': rmse, 'nrmse': nrmse, 'anrmse': anrmse, 'cor': corr, 'l_reg': lr.coef_}
+
+
+for i in F :
 
     data[i]=pd.merge(data[i],price,on='gasDayStartedOn')
     X=data[i].loc[:,'Lagged_NW':'SAS_NBP']
     Y=data[i].loc[:,'netWithdrawal']
-print(Y.head())
-print(X.head())
-
-
-x_train, x_test, y_train, y_test = train_test_split(X,Y, random_state=1)
-lr = LinearRegression()
-lr.fit(x_train, y_train)
-print(lr.coef_)
-print(lr.intercept_)
-rmse=sqrt(mean_squared_error(y_test,y_pred))
-nrmse=rmse/(max(y_test)-min(y_test))
-nrmse=rmse/np.average(y_test)
-corr=pearsonr(y_test,y_pred)
-
-
-Linear_Regression = {'r2': metrics.r2_score(y_test, y_pred), 'rmse': rmse, 'nrmse': nrmse, 'anrmse': anrmse, 'cor': corr, 'l_reg': lr.coef_}
-
+    Linear_Regression[i]=LiR(X,Y)
+    
+    
 ##Retrieving
 model = {'regression': Linear_Regression, 'classification': Logistic_Regression}
 import pickle
 filename = 'finalized_model.sav'
 pickle.dump(model, open(filename, 'wb'))
-
-
