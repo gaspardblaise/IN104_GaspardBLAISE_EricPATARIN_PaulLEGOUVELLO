@@ -124,7 +124,7 @@ nrmse=rmse/np.average(y_test)
 corr=pearsonr(y_test,y_pred)
 
 
-Linear_Regression = {'r2': metrics.r2_score(y_test, y_pred), 'rmse': rmse, 'nrmse': nrmse, 'anrmse': anrmse, 'cor': corr, 'l_reg': lr}
+Linear_Regression = {'r2': metrics.r2_score(y_test, y_pred), 'rmse': rmse, 'nrmse': nrmse, 'anrmse': anrmse, 'cor': corr, 'l_reg': lr.coef_}
 
 ##Retrieving
 model = {'regression': Linear_Regression, 'classification': Logistic_Regression}
